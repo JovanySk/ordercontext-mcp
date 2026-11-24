@@ -2,7 +2,7 @@
 
 This project connects an AI assistant (Claude Desktop or any MCP client) to a **Spring Boot orders API** for a bakery. It does it through a **read-only Model Context Protocol server** written in TypeScript: the model can look up orders, customers and stock, but it never touches the database or changes anything.
 
-[![CI](https://github.com/JovanySk/ordercontext-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/JovanySk/ordercontext-mcp/actions/workflows/ci.yml) ![Java](https://img.shields.io/badge/Java-17-orange) ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5-brightgreen) ![MCP](https://img.shields.io/badge/MCP-TypeScript%20SDK-black) ![Tests](https://img.shields.io/badge/tests-72%20JUnit%20%2B%2015%20Vitest-success)
+[![CI](https://github.com/JovanySk/ordercontext-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/JovanySk/ordercontext-mcp/actions/workflows/ci.yml) ![Java](https://img.shields.io/badge/Java-17-orange) ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5-brightgreen) ![MCP](https://img.shields.io/badge/MCP-TypeScript%20SDK-black) ![Tests](https://img.shields.io/badge/tests-72%20JUnit%20%2B%2038%20Vitest-success)
 
 ```text
 User ─► AI assistant ─► MCP server (Node/TS, stdio) ──GET──► Spring Boot REST API ─► JPA ─► H2 / MySQL
@@ -57,6 +57,36 @@ Java 17, Spring Boot 3.5, Spring Data JPA, Bean Validation and springdoc (Swagge
 
 TypeScript with the official `@modelcontextprotocol/sdk`. **15 Vitest tests**, including an **end-to-end protocol test**: it spawns the built server over stdio and checks the tool list, a real tool call, schema rejection and the 404 handling.
 
+## MCP Console (`console/`)
+
+A small web console that shows **exactly what the MCP server gives an AI assistant**. It talks to the real server, not a mock:
+
+```text
+Browser (React, :5173) ─HTTP─► Bridge (Express, :8787) ─JSON-RPC over stdio─► MCP server ─GET─► Spring Boot API (:8080) ─JPA─► H2
+```
+
+- **Bridge** (`console/bridge/`): spawns `mcp-server/dist/index.js` with the official MCP SDK `Client` over stdio and exposes `GET /bridge/tools` (tools/list with input schemas and annotations) and `POST /bridge/call` (tools/call, returns content, `isError`, error kind and duration). It only forwards tools the server lists; transport failures map to clear HTTP errors (503 server down, 504 timeout, 404 unknown tool).
+- **UI**: tool list with the `readOnlyHint` badge, a form generated from each tool's JSON Schema (min/max, optional fields), the live JSON-RPC request, and a response viewer: the order brief rendered with the stock warning in amber, a collapsible JSON tree for data, and error cards for 404s, schema rejections and an API that is down. A call-path strip lights up each hop during a call, four one-click scenarios run on the seed data, and a session log keeps the last calls. English and Spanish, dark by default.
+- **Tests:** 23 Vitest tests for the bridge (tool-name validation, body validation, error mapping) with a fake MCP client.
+
+```bash
+# API running on :8080 (see "Run it" below), then:
+cd mcp-server && npm ci && npm run build
+cd ../console && npm ci && npm run dev     # bridge on :8787 + Vite on http://localhost:5173
+```
+
+`ORDER_API_URL`, `BRIDGE_PORT` and `MCP_SERVER_PATH` override the defaults.
+
+| Order #10 brief with stock warning | Pending orders as a JSON tree |
+|---|---|
+| ![generate_order_context for order 10](docs/screenshots/01-order-context.png) | ![list_pending_orders JSON view](docs/screenshots/02-pending-orders.png) |
+| **Missing order: readable tool error** | **Mobile** |
+| ![order 999 error card](docs/screenshots/03-error-404.png) | <img src="docs/screenshots/04-mobile.png" alt="Mobile layout" width="260"> |
+
+The API's own Swagger UI, for comparison with what the AI is allowed to see (reads only):
+
+![Swagger UI](docs/screenshots/swagger.png)
+
 ## Run it
 
 ```bash
@@ -66,6 +96,9 @@ cd api && ./mvnw spring-boot:run          # or: docker compose up  (MySQL)
 # 2. MCP server
 cd mcp-server && npm ci && npm run build
 node scripts/demo.mjs                     # calls the tools against the running API
+
+# 3. Optional: the web console on http://localhost:5173
+cd console && npm ci && npm run dev
 ```
 
 Claude Desktop (`claude_desktop_config.json`):
