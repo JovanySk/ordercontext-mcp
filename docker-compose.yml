@@ -1,0 +1,21 @@
+# API with MySQL. The MCP server runs on the host, launched by your MCP client (see README).
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: ordercontext
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-change_me}
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      retries: 10
+  api:
+    build: ./api
+    environment:
+      SPRING_PROFILES_ACTIVE: mysql
+      DB_URL: jdbc:mysql://mysql:3306/ordercontext
+      DB_USERNAME: root
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-change_me}
+    ports: ["8080:8080"]
+    depends_on:
+      mysql: { condition: service_healthy }

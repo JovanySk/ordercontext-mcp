@@ -1,0 +1,14 @@
+# Activate with: --spring.profiles.active=mysql
+# Credentials come only from environment variables (DB_URL, DB_USERNAME, DB_PASSWORD).
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+  h2:
+    console:
+      enabled: false
