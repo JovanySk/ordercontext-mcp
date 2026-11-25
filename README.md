@@ -118,4 +118,4 @@ Claude Desktop (`claude_desktop_config.json`):
 Then ask things like: *"Which pending orders are at risk because of stock?"* or *"Summarize Ana Torres's order 10 and draft a message to her."*
 
 ---
-Author: **Jovany Morales del Ángel** · MIT License
+Author: **Jovany Morales del Ángel** · © 2026 All rights reserved.
